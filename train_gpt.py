@@ -1295,6 +1295,14 @@ def main() -> None:
         log0(f"Code size: {code_bytes} bytes")
         log0(f"Total submission size: {model_bytes + code_bytes} bytes")
 
+    # Magnitude pruning: zero out smallest weights to improve compression
+    with torch.no_grad():
+        for name, param in base_model.named_parameters():
+            if param.ndim == 2 and param.numel() > 65536:
+                threshold = torch.quantile(param.abs().float().flatten(), 0.03)
+                mask = param.abs() < threshold
+                param.masked_fill_(mask, 0.0)
+
     sd_cpu = {k: v.detach().cpu() for k, v in base_model.state_dict().items()}
     quant_result, quant_meta = mixed_quantize_int6(sd_cpu, {"mlp", "attn"})
     quant_buf = io.BytesIO()
