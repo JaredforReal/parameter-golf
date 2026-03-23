@@ -868,7 +868,7 @@ def eval_val_sliding(
                 logits = base_model.forward_logits(x_batch)
 
             nll = F.cross_entropy(
-                logits.reshape(-1, logits.size(-1).float()),
+                logits.reshape(-1, logits.size(-1)).float(),
                 y_batch.reshape(-1),
                 reduction="none",
             ).reshape(batch_size, seq_len)
